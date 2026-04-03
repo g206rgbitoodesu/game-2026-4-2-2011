@@ -36,6 +36,7 @@ function buyItem(id, amount) {
 
     if (!isShopItemUnlocked(id)) {
         const needNode = typeof getItemUnlockNode === "function" ? getItemUnlockNode(id) : null;
+        alert(needNode ? `この設備は星の記憶[${needNode}]で解放されます` : "まだ解放されていません");
         return;
     }
 
@@ -64,6 +65,10 @@ function renderLockedItem(container, key, item) {
     div.style.borderColor = "#555";
     div.style.opacity = "0.75";
     div.innerHTML = `
+        <div style="font-size:18px; font-weight:bold; color:#888;">🔒 ${item.name}</div>
+        <div style="font-size:12px; margin:8px 0; color:#aaa;">${item.desc}</div>
+        <div style="font-size:12px; color:#ffcc00; line-height:1.6;">星の記憶 [${needNode}] を解放すると購入可能</div>
+        <div style="font-size:11px; color:#666; margin-top:8px;">価格: ${item.basePrice.toLocaleString()} 〜</div>
         <div class="buy-group">
             <button class="buy-btn" disabled>×1</button>
             <button class="buy-btn" disabled>×10</button>
