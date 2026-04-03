@@ -1,17 +1,28 @@
+const MAX_CELLS = 240;
 const canvas = document.getElementById("canvas");  
 const ctx = canvas.getContext("2d");  
+
+// ★ ここに必要な変数をすべてまとめて定義する
 let cells = [], sparkles = [], totalCells = 0;  
 let ep = 0, permanentMult = 1, currentMultiplier = 1;  
 let feverTime = 0, goldenCell = null, blueCell = null, nextEvoIdx = 0;
 let epMultiplier = 1;
 let boughtNodes = 0;   
 let currentScreen = 1;
-const MAX_CELLS = 240; 
+let totalClicks = 0;     
+let specialClicks = 0;    
+let totalSacrifices = 0;
+let bigBangCount = 0; 
 let clickFeverTime = 0; 
-let gameSpeed = 1.0; 
-window.setSpeed = (s) => { gameSpeed = s; };
 window.clickFeverTime = 0;
-let hoverTimer;
+if (typeof gameSpeed === 'undefined') {
+    window.gameSpeed = 1.0; 
+}
+
+window.setSpeed = (s) => { 
+    gameSpeed = s; 
+    console.log("Current Speed:", gameSpeed);
+};
 
 const evoList = [  
     { name: "ダンゴムシ", threshold: 10000 }, { name: "小鳥", threshold: 100000 },  
@@ -128,39 +139,37 @@ function handleMainClick(x, y) {
 
 function handleAction(x, y) {  
     // 1. 黄金セルの処理
-    if (goldenCell) {  
-        const dx = x - goldenCell.x;  const dy = y - goldenCell.y;  
-        if (Math.sqrt(dx * dx + dy * dy) < 40) {  
-            feverTime = (boughtNodes >= 10) ? 360 : 180;  
-            goldenCell = null;  
-            cells = cells.filter(c => c.specialType !== "golden");  
-            for (let i = 0; i < 20; i++) sparkles.push(new Sparkle(x, y, "255, 204, 0"));  
-            updateCounter();  
-            return;  
-        }  
+totalClicks++;
+    if (goldenCell) {
+        const dx = x - goldenCell.x;
+        const dy = y - goldenCell.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 40) {
+            // ★追加: 特殊セルクリック数を+1
+            specialClicks++; 
+            
+            feverTime = (boughtNodes >= 10) ? 360 : 180;
+            goldenCell = null;
+            cells = cells.filter(c => c.specialType !== "golden");
+            for (let i = 0; i < 20; i++) sparkles.push(new Sparkle(x, y, "255, 204, 0"));
+            updateCounter();
+            return;
+        }
     }  
 
-    // 2. 青色セルの処理
+  // 2. 青色セルの処理
     if (blueCell) {
-        const dx = x - blueCell.x;  const dy = y - blueCell.y;  
-        if (Math.sqrt(dx * dx + dy * dy) < 40) {  
-            totalCells *= 2; 
-            
-            const popup = document.createElement("div");
-            popup.className = "click-popup";
-            popup.style.color = "#00ccff"; 
-            popup.style.textShadow = "0 0 10px #000, 0 0 20px #00ccff";
-            popup.textContent = `所持cellsが2倍に！`;
-            popup.style.left = `${x - 50}px`; 
-            popup.style.top = `${y}px`;
-            document.body.appendChild(popup);
-            setTimeout(() => popup.remove(), 1500);
+        const dx = x - blueCell.x;
+        const dy = y - blueCell.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 40) {
+            // ★追加: 特殊セルクリック数を+1
+            specialClicks++; 
 
+            let gain = currentMultiplier * permanentMult * 500;
+            totalCells += gain;
             blueCell = null;
             cells = cells.filter(c => c.specialType !== "blue");
-            // 【修正】青セル用の色パラメータを正しく渡す
-            for (let i = 0; i < 30; i++) sparkles.push(new Sparkle(x, y, "0, 204, 255"));  
-            updateCounter();  
+            for (let i = 0; i < 20; i++) sparkles.push(new Sparkle(x, y, "0, 204, 255"));
+            updateCounter();
             return;
         }
     }
@@ -258,14 +267,18 @@ setInterval(() => {
 
 // フィーバータイマー & セル出現タイマー
 setInterval(() => {  
-    // 【修正】黄金/青セルの出現判定を修正（確率の順序を正しく）
+    // ノード解放状況に応じて特殊セルを出現させる
     if (!goldenCell && !blueCell) {
-        let r = Math.random();
-        // 1/600の確率で青色を先にチェック（1/600 < 1/400 なので先に判定）
-        if (r < 1 / 600) {
-            createCell(undefined, undefined, "blue");
-        } else if (r < 1 / 600 + 1 / 400) {
-            // 青の範囲を超えた後、1/400の幅で黄金を判定
+        const blueUnlocked = (typeof isBlueCellUnlocked === "function") ? isBlueCellUnlocked() : false;
+        const r = Math.random();
+
+        if (blueUnlocked) {
+            if (r < 1 / 600) {
+                createCell(undefined, undefined, "blue");
+            } else if (r < 1 / 600 + 1 / 400) {
+                createCell(undefined, undefined, "golden");
+            }
+        } else if (r < 1 / 400) {
             createCell(undefined, undefined, "golden");
         }
     }
@@ -380,54 +393,55 @@ window.addEventListener('keydown', function(e) {
     }
 });
 //ーーーーーーmenuのカウントjs--------------------------------------------------------------
+// 新しく統合した updateStats 関数
 function updateStats() {
-    // 1クリック生成数（cells.jsの計算式を反映）
+    // 1. CPC (1クリック生成数) の計算 (cells.jsのロジックと同期)
     let clickPower = currentMultiplier; 
-    // ※ここにDMEMやFBSのボーナス計算を cells.js と同じように入れると正確になります
-    
-    document.getElementById("stat-current-cells").textContent = Math.floor(totalCells).toLocaleString();
-    document.getElementById("stat-cpc").textContent = Math.floor(clickPower * permanentMult).toLocaleString();
-    
-    // 毎秒生産量(SPS)の合計計算
-    let totalSps = 0;
-    if (typeof items !== 'undefined') {
-        for (let k in items) totalSps += items[k].count * items[k].sps;
+    if (typeof items !== 'undefined' && items.dmem && items.dmem.count >= 75) {
+        clickPower += 150000 + (items.dmem.count - 75) * 2000;
     }
-    if (typeof boughtNodes !== 'undefined' && boughtNodes >= 5) totalSps *= 2;
-    document.getElementById("stat-sps").textContent = Math.floor(totalSps).toLocaleString();
-
-    // 所持アップグレード合計
+    if (typeof items !== 'undefined' && items.fbs && items.fbs.count >= 115 && feverTime > 0) {
+        let currentSps = 0;
+        for (let k in items) currentSps += items[k].count * items[k].sps;
+        if (typeof boughtNodes !== 'undefined' && boughtNodes >= 5) currentSps *= 2;
+        clickPower = currentSps * 10;
+    }
+    let feverMult = (typeof feverTime !== 'undefined' && feverTime > 0 ? 7 : 1);
+    let clickFeverMult = (window.clickFeverTime > 0 ? 5 : 1);
+    let finalCpc = feverMult * clickFeverMult * clickPower * permanentMult;
+    
+    // 2. SPS (毎秒生産量) の計算
+    let totalSps = 0;
     let upgCount = 0;
     if (typeof items !== 'undefined') {
-        for (let k in items) upgCount += items[k].count;
+        for (let k in items) {
+            totalSps += items[k].count * items[k].sps;
+            upgCount += items[k].count;
+        }
     }
-    document.getElementById("stat-upgrades").textContent = upgCount;
-}
+    if (typeof boughtNodes !== 'undefined' && boughtNodes >= 5) totalSps *= 2;
 
-// game.js の冒頭（変数の定義場所）に追加
-let bigBangCount = 0; 
+    // 3. 画面への反映
+    document.getElementById("stat-current-cells").textContent = Math.floor(totalCells).toLocaleString();
+    document.getElementById("stat-cpc").textContent = Math.floor(finalCpc).toLocaleString();
+    document.getElementById("stat-sps").textContent = Math.floor(totalSps).toLocaleString();
+    document.getElementById("stat-upgrades").textContent = upgCount.toLocaleString();
 
-// triggerBigBang 関数の中に追加
-function triggerBigBang() {
-    // ...既存の確認処理など...
-    
-    bigBangCount++; // カウントを増やす
-    
-    // ...既存の転生処理...
-    
-    saveGame(); // 回数を保存
-    updateStats(); // 統計表示を更新
-}
+    // 4. 追加した統計データの反映
+    const statClicks = document.getElementById("stat-total-clicks");
+    if (statClicks) statClicks.textContent = totalClicks.toLocaleString();
 
-// updateStats 関数の中に追加（表示の更新）
-function updateStats() {
-    // ...既存の処理...
+    const statSpecial = document.getElementById("stat-special-clicks");
+    if (statSpecial) statSpecial.textContent = specialClicks.toLocaleString();
+
+    const statSacrifices = document.getElementById("stat-total-sacrifices");
+    if (statSacrifices) statSacrifices.textContent = totalSacrifices.toLocaleString();
+
     const statBigBang = document.getElementById("stat-bigbang-count");
-    if (statBigBang) {
-        statBigBang.textContent = bigBangCount.toLocaleString() + " 回";
-    }
+    if (statBigBang) statBigBang.textContent = (typeof bigBangCount !== 'undefined' ? bigBangCount : 0).toLocaleString() + " 回";
 }
-// game.js の一番下に追加
+
+//自動遷移
 function selectItem(name) {
     document.getElementById('selected-text').innerText = name;
     document.getElementById('menu-trigger').checked = false;
