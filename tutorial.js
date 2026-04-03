@@ -9,10 +9,9 @@
                 
                 // 【修正】boolean true ではなく文字列 "golden" を渡す
                 createCell(window.innerWidth / 2, window.innerHeight / 2, "golden");
-                               
-                // 【修正】showEPNotificationに適切なメッセージを渡す
+                              
                 if (typeof showEPNotification === 'function') {
-                    showEPNotification("✨ ゴールデンセル出現！タップしよう！");
+                            showEPNotification("クリックして");
                 }
             }
         }
