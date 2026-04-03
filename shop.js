@@ -81,7 +81,7 @@ function renderLockedItem(container, key, item) {
     div.style.opacity = "0.6";
 
     div.innerHTML = `
-        <div style="font-size:18px; font-weight:bold; color:#666; filter: blur(2px);">🔒 ${item.name}</div>
+        <div style="font-size:18px; font-weight:bold; color:#666; filter: blur(2px);"> ${item.name}</div>
         <div style="font-size:12px; margin:8px 0; color:#444; filter: blur(3px);">${item.desc}</div>
         <div style="font-size:12px; color:#aa8800; line-height:1.6; font-weight:bold;">
             星の記憶 [${needNode}] を解放してアンロック
