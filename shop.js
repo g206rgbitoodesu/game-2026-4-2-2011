@@ -58,68 +58,100 @@ function buyItem(id, amount) {
     if (typeof updateStats === "function") updateStats();
 }
 
+/**
+ * 次に解放されるアイテム（シルエット）を表示する関数
+ */
 function renderLockedItem(container, key, item) {
     const needNode = typeof getItemUnlockNode === "function" ? getItemUnlockNode(key) : "?";
     const div = document.createElement("div");
     div.className = "upgrade-item";
-    div.style.borderColor = "#555";
-    div.style.opacity = "0.75";
+    
+    // シルエット用のスタイル：少し暗く、ぼかしを入れるとおしゃれです
+    div.style.borderColor = "#444";
+    div.style.background = "rgba(20, 20, 20, 0.8)";
+    div.style.opacity = "0.6";
+
     div.innerHTML = `
-       
+        <div style="font-size:18px; font-weight:bold; color:#666; filter: blur(2px);">🔒 ${item.name}</div>
+        <div style="font-size:12px; margin:8px 0; color:#444; filter: blur(3px);">${item.desc}</div>
+        <div style="font-size:12px; color:#aa8800; line-height:1.6; font-weight:bold;">
+            星の記憶 [${needNode}] を解放してアンロック
+        </div>
+        <div style="font-size:11px; color:#444; margin-top:8px;">価格: ???</div>
+        <div class="buy-group" style="filter: grayscale(1);">
+            <button class="buy-btn" disabled>×1</button>
+            <button class="buy-btn" disabled>×10</button>
+            <button class="buy-btn max" disabled>MAX</button>
+        </div>
+    `;
     container.appendChild(div);
 }
 
+/**
+ * ショップ画面の描画（「次の一つ」だけシルエットにする版）
+ */
 function renderShop() {
     const container = document.getElementById("shop-container");
     if (!container) return;
     container.innerHTML = "";
 
+    let silhouetteShown = false; // シルエットを既に描画したかのフラグ
+
     for (let key in items) {
         const item = items[key];
 
-        if (!isShopItemUnlocked(key)) {
+        // 1. アイテムが解放されているかチェック
+        const isUnlocked = typeof isShopItemUnlocked === "function" ? isShopItemUnlocked(key) : true;
+
+        if (isUnlocked) {
+            // --- 解放済みアイテムの通常描画 ---
+            renderNormalItem(container, key, item); 
+        } 
+        else if (!silhouetteShown) {
+            // --- 未解放だが、「次の1つ目」なのでシルエット表示 ---
             renderLockedItem(container, key, item);
-            continue;
+            silhouetteShown = true; // 「次の一つ」を表示したのでフラグを立てる
+        } 
+        else {
+            // --- それ以降の未解放アイテムは、何もしない（画面に出さない） ---
+            continue; 
         }
-
-        let badgeHtml = "";
-
-        if (key === "dmem" && item.count >= 75) {
-            badgeHtml = `<div class="click-bonus-badge">クリックの強さ上昇</div>`;
-        }
-
-        if (key === "fbs" && item.count >= 115) {
-            const currentSps = getTotalSpsForBoost();
-            const sacrificeCost = Math.floor(currentSps * 60 * 7);
-            badgeHtml = `
-                <div class="click-bonus-badge"
-                     style="background:#ff33ff; color:white; cursor:pointer; pointer-events:auto; font-size: 9px;"
-                     onclick="event.stopPropagation(); activateSacrificeBoost(${sacrificeCost})">
-                    【儀式】${sacrificeCost.toLocaleString()} 消費<br>20秒間 クリック5倍
-                </div>`;
-        }
-
-        const price1 = getItemPrice(item, 1);
-        const price10 = getItemPrice(item, 10);
-
-        const div = document.createElement("div");
-        div.className = "upgrade-item";
-        div.style.borderColor = item.color;
-        div.style.position = "relative";
-        div.innerHTML = `
-            ${badgeHtml}
-            <div style="font-size:18px; font-weight:bold;">${item.name}</div>
-            <div style="font-size:12px; margin:4px 0; color:#bbb;">${item.desc}</div>
-            <div style="font-size:14px; margin-bottom:5px;">Lv: ${item.count} | Next: ${price1.toLocaleString()}</div>
-            <div class="buy-group">
-                <button class="buy-btn" onclick="buyItem('${key}', 1)" ${totalCells < price1 ? "disabled" : ""}>×1</button>
-                <button class="buy-btn" onclick="buyItem('${key}', 10)" ${totalCells < price10 ? "disabled" : ""}>×10</button>
-                <button class="buy-btn max" onclick="buyItem('${key}', 'max')" ${totalCells < price1 ? "disabled" : ""}>MAX</button>
-            </div>
-        `;
-        container.appendChild(div);
     }
 }
+
+/**
+ * 通常アイテムを描画する補助関数（renderShopをスッキリさせるため分離）
+ */
+function renderNormalItem(container, key, item) {
+    const price1 = getItemPrice(item, 1);
+    const price10 = getItemPrice(item, 10);
+    
+    let badgeHtml = "";
+    if (key === "dmem" && item.count >= 75) badgeHtml = `<div class="click-bonus-badge">クリックの強さ上昇</div>`;
+    if (key === "fbs" && item.count >= 115) {
+        const currentSps = typeof getTotalSpsForBoost === "function" ? getTotalSpsForBoost() : 0;
+        const sacrificeCost = Math.floor(currentSps * 60 * 7);
+        badgeHtml = `<div class="click-bonus-badge" style="background:#ff33ff; font-size:9px;" onclick="activateSacrificeBoost(${sacrificeCost})">【儀式】${sacrificeCost.toLocaleString()}消費</div>`;
+    }
+
+    const div = document.createElement("div");
+    div.className = "upgrade-item";
+    div.style.borderColor = item.color;
+    div.style.position = "relative";
+    div.innerHTML = `
+        ${badgeHtml}
+        <div style="font-size:18px; font-weight:bold;">${item.name}</div>
+        <div style="font-size:12px; margin:4px 0; color:#bbb;">${item.desc}</div>
+        <div style="font-size:14px; margin-bottom:5px;">Lv: ${item.count} | 次: ${price1.toLocaleString()}</div>
+        <div class="buy-group">
+            <button class="buy-btn" onclick="buyItem('${key}', 1)" ${totalCells < price1 ? "disabled" : ""}>×1</button>
+            <button class="buy-btn" onclick="buyItem('${key}', 10)" ${totalCells < price10 ? "disabled" : ""}>×10</button>
+            <button class="buy-btn max" onclick="buyItem('${key}', 'max')" ${totalCells < price1 ? "disabled" : ""}>MAX</button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
 
 function activateSacrificeBoost(cost) {
     if (clickFeverTime <= 0 && totalCells >= cost) {
