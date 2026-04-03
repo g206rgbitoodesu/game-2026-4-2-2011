@@ -55,22 +55,26 @@
 		    <div class="stat-row"><span>ビッグバン回数</span><span id="stat-bigbang-count">0 回</span></div>
                 </div>
 
-<h2 class="section-title">設定</h2>
+                <h2 class="section-title">設定</h2>
                 <div class="setting-item-vertical">
                     <p class="setting-label">表示方法</p>
                     <div class="dropdown-menu">
+                        <input type="checkbox" id="menu-trigger" class="trigger">
+                        <label for="menu-trigger" class="header">
+                            <span id="selected-text">通常</span>
+                            <span class="arrow">∨</span>
+                        </label>
+                        <div class="content">
+                            <div class="inner">
+                                <div class="item" onclick="selectItem('通常')">通常</div>
+                                <div class="item" onclick="selectItem('指数')">指数</div>
+                                <div class="item" onclick="selectItem('漢数字')">漢数字</div>
+                            </div>
                         </div>
+                    </div>
                 </div>
 
-                <h2 class="section-title">データ管理</h2>
-                <div class="setting-item-vertical">
-                    <p class="setting-label" style="color: #ff5555;">セーブデータの初期化</p>
-                    <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">※進行状況・EP・星の記憶など、すべてが完全に消去されます。</p>
-                    <button onclick="resetGameWithConfirmation()" style="background: #441111; color: #ff5555; border: 1px solid #ff5555; padding: 12px; cursor: pointer; border-radius: 5px; font-weight: bold; width: 100%;">
-                        セーブデータを完全に削除
-                    </button>
-                </div>
-                <h2 class="section-title">ヘルプ</h2>2>
+                <h2 class="section-title">ヘルプ</h2>
                 <div class="help-box">
                     <ul>
                       <li>特定のアイテムだけを上げるより、全体をバランスよく購入するといいかも</li>
