@@ -4,100 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cell Clicker Evolution</title>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.3/decimal.min.js"></script>
 </head>
 <body>
     <div id="notification-container"></div>
     <div id="flash-overlay"></div>
+    <div id="tutorial-overlay"></div>
 
-    <div id="evo-progress-container">
-        <div id="evo-progress-bar"></div>
-    </div>
+    <div id="game-container">
+        <div id="screen-1" class="screen active">
+            <div id="resource-display">
+                <div id="cell-count">0</div>
+                <div id="cell-label">細胞</div>
+                <div id="sps-display">毎秒: 0</div>
+            </div>
 
-    <div id="counter">
-        Cells: <span id="cellCount">0</span>
-        <div id="evo-status">形態: 単細胞生物 (x1)</div>
-    </div>
+            <div id="click-area">
+                <canvas id="cell-canvas"></canvas>
+                <div id="fever-status">🔥 FEVER 7X 🔥 <br><span id="fever-timer">180</span>s</div>
+                <div id="click-fever-status">⚡ CLICK FEVER 5X ⚡ <br><span id="click-fever-timer">20</span>s</div>
+            </div>
 
-    <div id="fever-ui">🔥 FEVER 7X 🔥 <br><span id="fever-timer">180</span>s</div>
-    <div id="click-fever-ui">⚡ CLICK FEVER 5X ⚡ <br><span id="click-fever-timer">20</span>s</div>
-    <button id="bigbang-btn" onclick="triggerBigBang()">BIG BANG</button>
-
-    <div id="container">
-        <div class="screen" id="screen1">
-            <canvas id="canvas"></canvas>
+            <div id="evolution-container">
+                <div id="evolution-name">進化段階: 原始のスープ</div>
+                <div id="evolution-progress-bar">
+                    <div id="evolution-progress-fill"></div>
+                </div>
+                <div id="evolution-requirement">次の進化まで: 100</div>
+            </div>
+            
+            <button id="bigbang-button" onclick="triggerBigBang()">
+                <div class="bigbang-title">BIG BANG</div>
+                <div class="bigbang-desc">宇宙を再構成し、強力な力を得る</div>
+            </button>
         </div>
 
-        <div class="screen" id="screen2">
-            <div class="upgrade-list" id="shop-container"></div>
+        <div id="screen-2" class="screen">
+            <h2 class="section-title">ショップ</h2>
+            <div id="shop-container">
+                </div>
         </div>
 
-        <div class="screen" id="screen3">
-            <div class="upgrade-list" id="etc-container">
-                <h2>星の記憶 (転生)</h2>
-                <div id="ep-display">0 EP</div>
-                <div id="skill-tree"></div>
-                <p id="hint-text">宇宙の終わりに到達すると、何かが起こる...</p>
+        <div id="screen-3" class="screen">
+            <h2 class="section-title">星の記憶</h2>
+            <div id="ep-display">
+                <div id="ep-count">0</div>
+                <div id="ep-label">進化ポイント (EP)</div>
+            </div>
+            
+            <div class="rebirth-info">
+                <p>現在の儀式回数: <span id="sacrifice-count">0</span></p>
+                <p>次の儀式で得られるEP: <span id="pending-ep">0</span></p>
+            </div>
+            
+            <button id="sacrifice-button" onclick="performSacrifice()">生命の儀式を行う</button>
+            
+            <h3 class="section-title" style="margin-top: 20px;">永続アップグレード</h3>
+            <div id="rebirth-upgrades-container">
+                </div>
+        </div>
+
+        <div id="screen-4" class="screen">
+            <h2 class="section-title">統計</h2>
+            <div id="stats-container">
+                <div class="stat-row"><span>現在の生産量</span><span class="stat-value" id="stat-current-cells">0</span></div>
+                <div class="stat-row"><span>毎秒生産量 (SPS)</span><span class="stat-value" id="stat-sps">0</span></div>
+                <div class="stat-row"><span>1クリック生成数</span><span class="stat-value" id="stat-cpc">0</span></div>
+                <div class="stat-row"><span>アップグレード所持数</span><span class="stat-value" id="stat-upgrades">0</span></div>
+                <div class="stat-row"><span>合計クリック回数</span><span class="stat-value" id="stat-total-clicks">0</span></div>
+                <div class="stat-row"><span>特殊セルクリック数</span><span class="stat-value" id="stat-special-clicks">0</span></div>
+                <div class="stat-row"><span>儀式の合計数</span><span class="stat-value" id="stat-sacrifices-count">0</span></div>
+                <div class="stat-row"><span>ビッグバン回数</span><span id="stat-bigbang-count">0 回</span></div>
+            </div>
+
+            <h2 class="section-title">設定</h2>
+            <div class="setting-item-vertical">
+                <p class="setting-label">表示方法</p>
+                <div class="dropdown-menu">
+                    <select id="display-mode-select" onchange="updateDisplayMode(this.value)">
+                        <option value="normal">通常</option>
+                        <option value="scientific">指数</option>
+                        <option value="kanji">漢数字</option>
+                    </select>
+                </div>
+            </div>
+
+            <h2 class="section-title">データ管理</h2>
+            <div class="setting-item-vertical">
+                <p class="setting-label" style="color: #ff5555;">セーブデータの初期化</p>
+                <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">※進行状況・EP・星の記憶など、すべてが完全に消去されます。</p>
+                <button onclick="resetGameWithConfirmation()" style="background: #441111; color: #ff5555; border: 1px solid #ff5555; padding: 12px; cursor: pointer; border-radius: 5px; font-weight: bold; width: 100%;">
+                    セーブデータを完全に削除
+                </button>
+            </div>
+
+            <h2 class="section-title">ヘルプ</h2>
+            <div class="help-box">
+                <ul>
+                    <li>特定のアイテムだけを上げるより、全体をバランスよく購入するといいかも</li>
+                    <li>儀式をうまく利用しよう</li>
+                </ul>
             </div>
         </div>
 
-        <div class="screen" id="screen4">
-            <div class="settings-panel">
-                <h2 class="section-title">統計</h2>
-                <div class="stat-list">
-                    <div class="stat-row"><span>現在の生産量</span><span class="stat-value" id="stat-current-cells">0</span></div>
-                    <div class="stat-row"><span>毎秒生産量 (SPS)</span><span class="stat-value" id="stat-sps">0</span></div>
-                    <div class="stat-row"><span>1クリック生成数</span><span class="stat-value" id="stat-cpc">0</span></div>
-                    <div class="stat-row"><span>アップグレード所持数</span><span class="stat-value" id="stat-upgrades">0</span></div>
-                    <div class="stat-row"><span>合計クリック回数</span><span class="stat-value" id="stat-total-clicks">0</span></div>
-                    <div class="stat-row"><span>特殊セルクリック数</span><span class="stat-value" id="stat-special-clicks">0</span></div>
-                    <div class="stat-row"><span>儀式の合計数</span><span class="stat-value" id="stat-total-sacrifices">0</span></div>
-		    <div class="stat-row"><span>ビッグバン回数</span><span id="stat-bigbang-count">0 回</span></div>
-                </div>
-
-                <h2 class="section-title">設定</h2>
-                <div class="setting-item-vertical">
-                    <p class="setting-label">表示方法</p>
-                    <div class="dropdown-menu">
-                        <input type="checkbox" id="menu-trigger" class="trigger">
-                        <label for="menu-trigger" class="header">
-                            <span id="selected-text">通常</span>
-                            <span class="arrow">∨</span>
-                        </label>
-                        <div class="content">
-                            <div class="inner">
-                                <div class="item" onclick="selectItem('通常')">通常</div>
-                                <div class="item" onclick="selectItem('指数')">指数</div>
-                                <div class="item" onclick="selectItem('漢数字')">漢数字</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <h2 class="section-title">ヘルプ</h2>
-                <div class="help-box">
-                    <ul>
-                      <li>特定のアイテムだけを上げるより、全体をバランスよく購入するといいかも</li>
-               　　　 <li>儀式をうまく利用しよう</li>
-               　　　 
-                    </ul>
-                </div>
+        <div id="menu">
+            <div class="menu-item active" onclick="showScreen(1)">
+                <div class="menu-icon">🧬</div>
+                <div class="menu-text">進化</div>
+            </div>
+            <div class="menu-item" onclick="showScreen(2)">
+                <div class="menu-icon">🛒</div>
+                <div class="menu-text">ショップ</div>
+            </div>
+            <div class="menu-item" onclick="showScreen(3)">
+                <div class="menu-icon">✨</div>
+                <div class="menu-text">記憶</div>
+            </div>
+            <div class="menu-item" onclick="showScreen(4)">
+                <div class="menu-icon">⚙️</div>
+                <div class="menu-text">設定</div>
             </div>
         </div>
     </div>
 
-    <div id="menu">
-        <div onclick="showScreen(1)">Cells</div>
-        <div onclick="showScreen(2)">ショップ</div>
-        <div onclick="showScreen(3)">強化</div>
-        <div onclick="showScreen(4)">その他</div>
-    </div>
-
-    <script src="shop.js?v=4"></script>
-    <script src="cells.js?v=4"></script>
-    <script src="game.js?v=4"></script>
-    <script src="rebirth.js?v=4"></script>
-    <script src="tutorial.js?v=4"></script>
-    <script src="save.js?v=4"></script>
+    <script src="save.js"></script>
+    <script src="cells.js"></script>
+    <script src="shop.js"></script>
+    <script src="rebirth.js"></script>
+    <script src="tutorial.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
