@@ -58,61 +58,72 @@ function buyItem(id, amount) {
     if (typeof updateStats === "function") updateStats();
 }
 
+/**
+ * 未開放（ロック）状態のアイテムを表示する関数
+ */
 function renderLockedItem(container, key, item) {
     const needNode = typeof getItemUnlockNode === "function" ? getItemUnlockNode(key) : "?";
     const div = document.createElement("div");
     div.className = "upgrade-item";
     div.style.borderColor = "#555";
     div.style.opacity = "0.75";
-    div.innerHTML = `
-       if (item.isLocked) {
-    div.innerHTML = `
-        <div style="font-size:18px; font-weight:bold; color:#888; opacity: 0.5;">🔒 ???</div>
-        <div style="font-size:12px; margin:8px 0; color:#aaa; opacity: 0.5;">???</div>
-        <div style="font-size:12px; color:#ffcc00; line-height:1.6; opacity: 0.5;">星の記憶 [${needNode}] を解放すると購入可能</div>
-        <div style="font-size:11px; color:#666; margin-top:8px; opacity: 0.5;">価格: ???</div>
-        <div class="buy-group">
-            <button class="buy-btn" disabled style="opacity: 0.5;">×1</button>
-            <button class="buy-btn" disabled style="opacity: 0.5;">×10</button>
-            <button class="buy-btn max" disabled style="opacity: 0.5;">MAX</button>
-        </div>
-    `;
-} else {
-    div.innerHTML = `
-        <div style="font-size:18px; font-weight:bold; color:#888;">🔓 ${item.name}</div>
-        <div style="font-size:12px; margin:8px 0; color:#aaa;">${item.desc}</div>
-        <div style="font-size:12px; color:#ffcc00; line-height:1.6;">星の記憶 [${needNode}] を解放すると購入可能</div>
-        <div style="font-size:11px; color:#666; margin-top:8px;">価格: ${item.basePrice.toLocaleString()} 〜</div>
-        <div class="buy-group">
-            <button class="buy-btn">×1</button>
-            <button class="buy-btn">×10</button>
-            <button class="buy-btn max">MAX</button>
-        </div>
-    `;
-}
-container.appendChild(div);
 
+    if (item.isLocked) {
+        // 【完全にロック】名前も説明も隠す
+        div.innerHTML = `
+            <div style="font-size:18px; font-weight:bold; color:#888; opacity: 0.5;">🔒 ???</div>
+            <div style="font-size:12px; margin:8px 0; color:#aaa; opacity: 0.5;">???</div>
+            <div style="font-size:12px; color:#ffcc00; line-height:1.6; opacity: 0.5;">星の記憶 [${needNode}] を解放すると購入可能</div>
+            <div style="font-size:11px; color:#666; margin-top:8px; opacity: 0.5;">価格: ???</div>
+            <div class="buy-group">
+                <button class="buy-btn" disabled style="opacity: 0.5;">×1</button>
+                <button class="buy-btn" disabled style="opacity: 0.5;">×10</button>
+                <button class="buy-btn max" disabled style="opacity: 0.5;">MAX</button>
+            </div>
+        `;
+    } else {
+        // 【半ロック】名前は見えているが買えない状態
+        div.innerHTML = `
+            <div style="font-size:18px; font-weight:bold; color:#888;">🔓 ${item.name}</div>
+            <div style="font-size:12px; margin:8px 0; color:#aaa;">${item.desc}</div>
+            <div style="font-size:12px; color:#ffcc00; line-height:1.6;">星の記憶 [${needNode}] を解放すると購入可能</div>
+            <div style="font-size:11px; color:#666; margin-top:8px;">価格: ${item.basePrice.toLocaleString()} 〜</div>
+            <div class="buy-group">
+                <button class="buy-btn" disabled>×1</button>
+                <button class="buy-btn" disabled>×10</button>
+                <button class="buy-btn max" disabled>MAX</button>
+            </div>
+        `;
+    }
+    container.appendChild(div);
+}
+
+/**
+ * ショップ画面全体を描画する関数
+ */
 function renderShop() {
     const container = document.getElementById("shop-container");
     if (!container) return;
-    container.innerHTML = "";
+    container.innerHTML = ""; // 画面をクリア
 
     for (let key in items) {
         const item = items[key];
 
-        if (!isShopItemUnlocked(key)) {
+        // ロック判定（isShopItemUnlocked関数がある前提）
+        if (typeof isShopItemUnlocked === "function" && !isShopItemUnlocked(key)) {
             renderLockedItem(container, key, item);
             continue;
         }
 
+        // バッジ（特殊効果）の処理
         let badgeHtml = "";
-
         if (key === "dmem" && item.count >= 75) {
             badgeHtml = `<div class="click-bonus-badge">クリックの強さ上昇</div>`;
         }
 
         if (key === "fbs" && item.count >= 115) {
-            const currentSps = getTotalSpsForBoost();
+            // 儀式のコスト計算（getTotalSpsForBoost関数がある前提）
+            const currentSps = typeof getTotalSpsForBoost === "function" ? getTotalSpsForBoost() : 0;
             const sacrificeCost = Math.floor(currentSps * 60 * 7);
             badgeHtml = `
                 <div class="click-bonus-badge"
@@ -122,9 +133,11 @@ function renderShop() {
                 </div>`;
         }
 
+        // 価格計算
         const price1 = getItemPrice(item, 1);
         const price10 = getItemPrice(item, 10);
 
+        // 通常アイテムの表示
         const div = document.createElement("div");
         div.className = "upgrade-item";
         div.style.borderColor = item.color;
