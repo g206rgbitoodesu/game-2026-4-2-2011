@@ -36,7 +36,6 @@ function buyItem(id, amount) {
 
     if (!isShopItemUnlocked(id)) {
         const needNode = typeof getItemUnlockNode === "function" ? getItemUnlockNode(id) : null;
-        alert(needNode ? `この設備は星の記憶[${needNode}]で解放されます` : "まだ解放されていません");
         return;
     }
 
