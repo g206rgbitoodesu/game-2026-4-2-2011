@@ -46,7 +46,7 @@ function buyItem(id, amount) {
 
     if (!isShopItemUnlocked(id)) {
         const needNode = typeof getItemUnlockNode === "function" ? getItemUnlockNode(id) : null;
-        alert(needNode ? `この設備は星の記憶[${needNode}]で解放されます` : "まだ解放されていません");
+        alert(needNode ? `この設備は[${needNode}]で解放されます` : "まだ解放されていません");
         return;
     }
 
@@ -84,7 +84,7 @@ function renderLockedItem(container, key, item) {
         <div style="font-size:18px; font-weight:bold; color:#666; filter: blur(2px);"> ${item.name}</div>
         <div style="font-size:12px; margin:8px 0; color:#444; filter: blur(3px);">${item.desc}</div>
         <div style="font-size:12px; color:#aa8800; line-height:1.6; font-weight:bold;">
-            星の記憶 [${needNode}] を解放してアンロック
+             [${needNode}] を解放してアンロック
         </div>
         <div style="font-size:11px; color:#444; margin-top:8px;">価格: ???</div>
         <div class="buy-group" style="filter: grayscale(1);">
@@ -118,19 +118,36 @@ function renderShop() {
     });
 }
 
-function renderNormalItem(container, key, item) {
-    const price1 = getItemPrice(item, 1);
-    const price10 = getItemPrice(item, 10);
+function renderShop() {
+    const container = document.getElementById("shop-container");
+    if (!container) return;
+    container.innerHTML = "";
 
-    let badgeHtml = "";
-    if (key === "dmem" && item.count >= 75) {
-        badgeHtml = `<div class="click-bonus-badge">クリックの強さ上昇</div>`;
-    }
-    if (key === "fbs" && item.count >= 115) {
-        const currentSps = getTotalSpsForBoost();
-        const sacrificeCost = Math.floor(currentSps * 60 * 7);
-        badgeHtml = `<div class="click-bonus-badge" style="background:#ff33ff; font-size:9px;" onclick="activateSacrificeBoost(${sacrificeCost})">【儀式】${sacrificeCost.toLocaleString()}消費</div>`;
-    }
+    for (let key in items) {
+        const item = items[key];
+
+        if (!isShopItemUnlocked(key)) {
+            renderLockedItem(container, key, item);
+            continue;
+        }
+
+        let badgeHtml = "";
+
+        if (key === "dmem" && item.count >= 75) {
+            badgeHtml = `<div class="click-bonus-badge">クリックの強さ上昇</div>`;
+        }
+
+        if (key === "fbs" && item.count >= 115) {
+            const currentSps = getTotalSpsForBoost();
+            const sacrificeCost = Math.floor(currentSps * 60 * 7);
+            badgeHtml = `
+                <div class="click-bonus-badge"
+                     style="background:#ff33ff; color:white; cursor:pointer; pointer-events:auto; font-size: 9px;"
+                     onclick="event.stopPropagation(); activateSacrificeBoost(${sacrificeCost})">
+                    【儀式】${sacrificeCost.toLocaleString()} 消費<br>20秒間 クリック5倍
+                </div>`;
+        }
+
 
     const div = document.createElement("div");
     div.className = "upgrade-item";
