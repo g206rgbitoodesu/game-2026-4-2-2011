@@ -49,7 +49,9 @@ class Cell {
                 }
             }
         }
-
+if (this.specialtype) {
+    const bounceAccel = 1.0;
+    
         // 3. 座標の更新
         this.x += this.vx;
         this.y += this.vy;
