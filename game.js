@@ -59,12 +59,11 @@ function updateCounter() {
     }
 
     // --- 1. 進化判定と倍率の更新 ---
-    // 【修正】nextEvoIdxがインクリメント後にオーバーフローしないようガード追加
     while (nextEvoIdx < evoList.length && totalCells >= evoList[nextEvoIdx].threshold) {
         nextEvoIdx++; 
         currentMultiplier = Math.pow(2, nextEvoIdx); 
         if (typeof showEvolutionFlash === "function") showEvolutionFlash();
-    }
+    }																																																																														
 
     // プログレスバーの更新（【修正】範囲外アクセスを防止）
     if (nextEvoIdx < evoList.length) {
@@ -75,7 +74,7 @@ function updateCounter() {
         if (progressBar) {
             progressBar.style.height = Math.min(100, Math.max(0, progress)) + "%";  
         }
-    } else {
+    } else {			
         // 全進化終了
         const progressBar = document.getElementById("evo-progress-bar");
         if (progressBar) progressBar.style.height = "100%";
@@ -131,7 +130,6 @@ function animate() {
 }  
 animate();  
 
-// 【追加】handleMainClickを定義（元は未定義で呼び出されていた）
 function handleMainClick(x, y) {
     // クリックで数値を加算（isClick = true で呼び出す）
     createCell(x, y, null, true);
@@ -393,7 +391,6 @@ window.addEventListener('keydown', function(e) {
     }
 });
 //ーーーーーーmenuのカウントjs--------------------------------------------------------------
-// 新しく統合した updateStats 関数
 function updateStats() {
     // 1. CPC (1クリック生成数) の計算 (cells.jsのロジックと同期)
     let clickPower = currentMultiplier; 
