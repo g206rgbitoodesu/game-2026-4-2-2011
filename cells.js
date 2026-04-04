@@ -54,10 +54,6 @@ class Cell {
         this.x += this.vx;
         this.y += this.vy;
 
-        // 4. 壁での跳ね返り（スペシャルセルのみ加速）
-        if (this.specialType) {
-            const bounceAccel = 1.3; // ★加速倍率
-            const maxSpeed = 130;    // 速くなりすぎ防止の安全弁（必要に応じて調整）
 
             // 横壁の判定
             if (this.x - this.r < 0) {
